@@ -53,6 +53,32 @@ func CreateMouseDevice(
 	idVendor uint16,
 	idProduct uint16,
 ) bool {
+	return CreateMouseDeviceEx(serverHandle, outDeviceHandle, busID, autoAttachLocalhost, idVendor, idProduct, nil, nil, nil)
+}
+
+// CreateMouseDeviceEx creates a new HID mouse device with an explicit USB identity.
+// @param serverHandle Handle to the USB server.
+// @param outDeviceHandle Output parameter for the created device handle.
+// @param busID ID of the bus to add the device to.
+// @param autoAttachLocalhost If true, the device will be automatically attached to a USBIP-Client/Driver running on THIS machine.
+// @param idVendor Optional USB vendor ID (0 = default).
+// @param idProduct Optional USB product ID (0 = default).
+// @param manufacturer Optional USB iManufacturer string (NULL or empty = default).
+// @param productName Optional USB iProduct string (NULL or empty = default).
+// @param serialNumber Optional USB iSerialNumber string (NULL or empty = default).
+//
+//export CreateMouseDeviceEx
+func CreateMouseDeviceEx(
+	serverHandle C.USBServerHandle,
+	outDeviceHandle *C.MouseDeviceHandle,
+	busID uint32,
+	autoAttachLocalhost bool,
+	idVendor uint16,
+	idProduct uint16,
+	manufacturer *C.char,
+	productName *C.char,
+	serialNumber *C.char,
+) bool {
 	sh := cgo.Handle(serverHandle)
 	shw, ok := sh.Value().(*usbServerHandleWrapper)
 	if !ok {
@@ -69,6 +95,15 @@ func CreateMouseDevice(
 	}
 	if idProduct != 0 {
 		opts.IDProduct = &idProduct
+	}
+	if s := C.GoString(manufacturer); s != "" {
+		opts.Manufacturer = &s
+	}
+	if s := C.GoString(productName); s != "" {
+		opts.ProductName = &s
+	}
+	if s := C.GoString(serialNumber); s != "" {
+		opts.SerialNumber = &s
 	}
 
 	d, err := mouse.New(opts)

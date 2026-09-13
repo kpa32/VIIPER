@@ -24,12 +24,29 @@ func New(o *device.CreateOptions) (*Mouse, error) {
 	d := &Mouse{
 		descriptor: defaultDescriptor,
 	}
+	// Deep-copy the shared string descriptor table so per-device identity
+	// overrides never mutate the package-level default (maps are copied by
+	// reference in the struct assignment above).
+	strings := make(map[uint8]string, len(defaultDescriptor.Strings))
+	for k, v := range defaultDescriptor.Strings {
+		strings[k] = v
+	}
+	d.descriptor.Strings = strings
 	if o != nil {
 		if o.IDVendor != nil {
 			d.descriptor.Device.IDVendor = *o.IDVendor
 		}
 		if o.IDProduct != nil {
 			d.descriptor.Device.IDProduct = *o.IDProduct
+		}
+		if o.Manufacturer != nil && *o.Manufacturer != "" {
+			d.descriptor.Strings[1] = *o.Manufacturer
+		}
+		if o.ProductName != nil && *o.ProductName != "" {
+			d.descriptor.Strings[2] = *o.ProductName
+		}
+		if o.SerialNumber != nil && *o.SerialNumber != "" {
+			d.descriptor.Strings[3] = *o.SerialNumber
 		}
 	}
 	d.inputCh = make(chan InputState, 1)
